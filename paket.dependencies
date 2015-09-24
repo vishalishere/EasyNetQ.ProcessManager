@@ -1,0 +1,11 @@
+source https://nuget.org/api/v2
+
+nuget EasyNetQ
+
+group Examples
+	nuget Argu
+	nuget FSharp.Core
+	nuget dotLiquid
+	nuget fspickler
+	nuget fspickler.json
+	nuget SqlProvider
