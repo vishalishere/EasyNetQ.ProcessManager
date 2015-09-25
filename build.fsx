@@ -1,0 +1,27 @@
+﻿#r "packages/build/FAKE/tools/FAKELib.dll"
+open Fake
+open Fake.Paket
+
+let build () =
+    build
+        (fun d -> { d with Properties = ["Configuration","Release";"Optimize","True"]; Targets = ["Clean";"Build"] }) 
+        ("src" @@ "EasyNetQ.ProcessManager.State.SqlServer" @@ "EasyNetQ.ProcessManager.State.SqlServer.fsproj")
+
+let package () =
+    Pack  (fun p -> { p with OutputPath = "output" })
+
+let push () =
+    let apiKey = environVarOrFail "apikey"
+    Push (fun p -> { p with ApiKey = apiKey })
+
+Target "build" build
+Target "package" package
+Target "push" push
+Target "default" id
+
+"build"
+    ==> "package"
+    =?> ("push", getEnvironmentVarAsBool "apikey")
+    ==> "default"
+
+RunParameterTargetOrDefault "target" "default"

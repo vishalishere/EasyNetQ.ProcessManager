@@ -2,7 +2,14 @@ source https://nuget.org/api/v2
 
 nuget EasyNetQ
 
+group Build
+    source https://nuget.org/api/v2
+
+	nuget FAKE
+
 group Examples
+    source https://nuget.org/api/v2
+
 	nuget Argu
 	nuget FSharp.Core
 	nuget dotLiquid

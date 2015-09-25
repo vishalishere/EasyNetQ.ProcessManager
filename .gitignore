@@ -185,3 +185,5 @@ docs/content/license.md
 docs/content/release-notes.md
 deploy/tools
 deploy/Database
+output
+.fake

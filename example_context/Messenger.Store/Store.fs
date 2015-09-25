@@ -7,7 +7,7 @@ open Messenger.Messages.Store
 type StoreConfig =
     | [<Mandatory>] Rabbit_Connection of string
     | [<Mandatory>] Sql_Connection of string
-    with 
+    with
         interface IArgParserTemplate with
             member ec.Usage =
                 match ec with

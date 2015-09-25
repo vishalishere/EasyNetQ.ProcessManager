@@ -11,11 +11,16 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EasyNetQ.ProcessManager.Sta
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{345D31CB-AEB5-4295-B4CC-4751259E1A38}"
 	ProjectSection(SolutionItems) = preProject
+		build.bat = build.bat
+		build.fsx = build.fsx
 		paket.dependencies = paket.dependencies
 		paket.lock = paket.lock
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example_context", "example_context", "{FE8E3785-2634-454C-BF2B-BFC89DACA879}"
+	ProjectSection(SolutionItems) = preProject
+		example_context\shared.app.config = example_context\shared.app.config
+	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Messenger.Email", "example_context\Messenger.Email\Messenger.Email.fsproj", "{4502EF37-DB9E-4366-84C1-06A207D9D3C1}"
 EndProject

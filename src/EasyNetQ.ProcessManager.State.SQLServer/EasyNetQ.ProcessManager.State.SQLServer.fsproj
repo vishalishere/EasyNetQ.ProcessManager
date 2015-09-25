@@ -57,11 +57,18 @@
   -->
   <ItemGroup>
     <None Include="paket.references" />
+    <Compile Include="..\VersionInfo.fs">
+      <Link>VersionInfo.fs</Link>
+    </Compile>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="ISerializer.fs" />
     <Compile Include="Sql.fs" />
     <Compile Include="SqlStores.fs" />
     <None Include="SqlFiles\Sprocs\usp_add_active_no_timeout.sql" />
     <None Include="SqlFiles\Sprocs\usp_add_active_with_timeout.sql" />
+    <None Include="SqlFiles\Up\1. Create Active Table.sql" />
+    <None Include="SqlFiles\Up\2. Create State Table.sql" />
+    <None Include="paket.template" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -84,7 +91,7 @@
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
       <ItemGroup>
         <Reference Include="EasyNetQ">
-          <HintPath>..\packages\EasyNetQ\lib\net40\EasyNetQ.dll</HintPath>
+          <HintPath>..\..\packages\EasyNetQ\lib\net40\EasyNetQ.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
@@ -95,7 +102,7 @@
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6')">
       <ItemGroup>
         <Reference Include="RabbitMQ.Client">
-          <HintPath>..\packages\RabbitMQ.Client\lib\net40\RabbitMQ.Client.dll</HintPath>
+          <HintPath>..\..\packages\RabbitMQ.Client\lib\net40\RabbitMQ.Client.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
