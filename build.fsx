@@ -12,7 +12,7 @@ let package () =
 
 let push () =
     let apiKey = environVarOrFail "apikey"
-    Push (fun p -> { p with ApiKey = apiKey })
+    Push (fun p -> { p with ApiKey = apiKey; WorkingDir = "output" })
 
 Target "build" build
 Target "package" package
