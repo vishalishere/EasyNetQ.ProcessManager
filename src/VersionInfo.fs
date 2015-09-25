@@ -1,2 +1,2 @@
 module internal System.VersionInfo
-let [<Literal>] Version = "0.9.1"
+let [<Literal>] Version = "0.9.0"

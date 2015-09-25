@@ -21,7 +21,7 @@ Target "default" id
 
 "build"
     ==> "package"
-    =?> ("push", getEnvironmentVarAsBool "apikey")
+    =?> ("push", match environVarOrNone "apikey" with Some a -> true | _ -> false)
     ==> "default"
 
 RunParameterTargetOrDefault "target" "default"
