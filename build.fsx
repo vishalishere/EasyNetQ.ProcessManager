@@ -8,6 +8,7 @@ let build () =
         ("src" @@ "EasyNetQ.ProcessManager.State.SqlServer" @@ "EasyNetQ.ProcessManager.State.SqlServer.fsproj")
 
 let package () =
+    CleanDir "output"
     Pack  (fun p -> { p with OutputPath = "output" })
 
 let push () =
