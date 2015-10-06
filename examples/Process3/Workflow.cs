@@ -46,18 +46,19 @@ namespace Process3
 
         public static Out Start(IDictionary<string, object> model, string contentTemplate, string addressTemplate)
         {
-            var cid1 = Guid.NewGuid();
-            var cid2 = Guid.NewGuid();
+            var modelCid = Guid.NewGuid();
+            var contentCid = Guid.NewGuid();
+            var addressCid = Guid.NewGuid();
             return
                 Out.Empty
-                    .AddRequest(new StoreModel(cid1, model), TimeSpan.FromSeconds(4))
-                    .AddCont<ModelStored>(cid1.ToString(), ModelStoredCheckRenderContentKey, TimeSpan.FromSeconds(5), "TimeOut")
-                    .AddCont<ModelStored>(cid1.ToString(), ModelStoredCheckRenderAddressKey, TimeSpan.FromSeconds(5), "TimeOut")
-                    .AddRequest(new StoreTemplate(cid1, "content template", contentTemplate), TimeSpan.FromSeconds(4))
-                    .AddCont<TemplateStored>(cid1.ToString(), ContentTemplateStoredCheckRenderContentKey, TimeSpan.FromSeconds(5),
+                    .AddRequest(new StoreModel(modelCid, model), TimeSpan.FromSeconds(4))
+                    .AddCont<ModelStored>(modelCid.ToString(), ModelStoredCheckRenderContentKey, TimeSpan.FromSeconds(5), "TimeOut")
+                    .AddCont<ModelStored>(modelCid.ToString(), ModelStoredCheckRenderAddressKey, TimeSpan.FromSeconds(5), "TimeOut")
+                    .AddRequest(new StoreTemplate(contentCid, "content template", contentTemplate), TimeSpan.FromSeconds(4))
+                    .AddCont<TemplateStored>(contentCid.ToString(), ContentTemplateStoredCheckRenderContentKey, TimeSpan.FromSeconds(5),
                         "TimeOut")
-                    .AddRequest(new StoreTemplate(cid2, "address template", addressTemplate), TimeSpan.FromSeconds(4))
-                    .AddCont<TemplateStored>(cid2.ToString(), AddressTemplateStoredCheckRenderAddressKey, TimeSpan.FromSeconds(5),
+                    .AddRequest(new StoreTemplate(addressCid, "address template", addressTemplate), TimeSpan.FromSeconds(4))
+                    .AddCont<TemplateStored>(addressCid.ToString(), AddressTemplateStoredCheckRenderAddressKey, TimeSpan.FromSeconds(5),
                         "TimeOut");
         }
 

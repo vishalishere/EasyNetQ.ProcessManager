@@ -4,6 +4,7 @@ open EasyNetQ.ProcessManager
 
 open System.Data.SqlClient
 
+// SqlServer backed persistent state; requires state table to be deployed.
 type SqlState (connString : string, workflowId : WorkflowId, serializer : ISerializer) =
     member private __.wid = match workflowId with WorkflowId w -> w
     interface IState with
@@ -41,6 +42,7 @@ type SqlState (connString : string, workflowId : WorkflowId, serializer : ISeria
                     serializer.Deserialize raw
             safeContext<'a> connString serializer workflowId (Some t) (action value)
 
+// SqlServer backed persistent state store; requires state table to be deployed.
 type SqlStateStore (connString : string, serializer : ISerializer) =
     interface IStateStore with
         member __.Add (_ : WorkflowId) (_ : IState) = ()
@@ -51,6 +53,7 @@ type SqlStateStore (connString : string, serializer : ISerializer) =
         member __.Create w =
             SqlState (connString, w, serializer) :> IState
          
+// SqlServer backed persistent active store; requires active table and sprocs to be deployed.
 type SqlActiveStore (connString : string) =
     interface IActiveStore with
         member __.Add<'a> { CorrelationId = (CorrelationId cid); WorkflowId = (WorkflowId wid); NextStep = (StepName next); TimeOut = timeOut; TimeOutNextStep = timeOutNext } =

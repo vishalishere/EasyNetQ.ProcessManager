@@ -16,6 +16,7 @@ type MemoryState () =
             | true, v -> Some (unbox<'a> v)
             | false, _ -> None
 
+// In memory state store - designed only to be used for testing.
 type MemoryStateStore () =
     let store = ConcurrentDictionary<Guid, IState>()
     interface IStateStore with
@@ -28,6 +29,7 @@ type MemoryStateStore () =
         member __.Create (_) =
             MemoryState () :> IState
 
+// In memory active store - designed only to be used for testing.
 type MemoryActiveStore () =
     let store = ConcurrentDictionary<string * Type, (StepName * WorkflowId * DateTime * StepName option) list>()
     member __.Add<'message> (CorrelationId correlationId) nextStep stateId timeOut timeOutNextStep =
