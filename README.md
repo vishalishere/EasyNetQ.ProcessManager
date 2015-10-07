@@ -43,4 +43,5 @@ projects. You can change the SQL Server, RabbitMQ and SMTP connection strings in
 ## FAQ
 
 Q. Aaaargh! I opened the source file and all my curly braces dissappeared! What's going on?
+
 A. So, yeah. The code is written in F# - but with C#/VB.net usage in mind. Check out example Process3 for a good example of what consuming the code from C# looks like. And if you're interested in helping hack on the project but don't know F#? Don't worry, we're a friendly bunch. Just start asking questions in the Issues area and we'll help you out.
