@@ -35,3 +35,7 @@ To add a managed handler (single subscription per type):
 
 A blog post to get you going: http://blog.mavnn.co.uk/easynetq-process-management/
 
+Running build.bat will build and package the two core libraries for you. To run and
+build the full solution with the example projects, you will need an SQL Server (or Express)
+instance set up with the SQL files from the Messenger.Store and EasyNetQ.ProcessManager.State.SQLServer
+projects. You can change the SQL Server, RabbitMQ and SMTP connection strings in the example_context/shared.app.config file.
