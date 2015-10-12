@@ -25,7 +25,7 @@ let safeContext<'a> connString (serializer : ISerializer) (WorkflowId wid) type'
     match type' with
     | Some t ->
         if not <| serializer.CanSerialize t then
-            failwith "Provided serializer cannot serialize type %A" t
+            failwithf "Provided serializer cannot serialize type %A" t
     | None -> ()
     use conn = new SqlConnection(connString)
     conn.Open()
@@ -56,7 +56,7 @@ let getRawState (conn : SqlConnection) trans (wid : Guid) (t : Type) =
         dataReader.Read() |> ignore
         let result = dataReader.GetString(0) |> Some
         if dataReader.Read() then
-            failwith "More than one state stored for workflow %A, type %s - have you changed the State table settings?" wid
+            failwithf "More than one state stored for workflow %A, type %A - have you changed the State table settings?" wid t
         result
 
 let insertRawState (conn : SqlConnection) trans (wid : Guid) (t : Type) (state : string) =
@@ -108,7 +108,7 @@ let insertActive (conn : SqlConnection) (cid : string) (wid : Guid) (t : Type) (
     insert.ExecuteNonQuery() |> ignore
 
 let containsActive (conn : SqlConnection) (cid : string) (t : Type) =
-    let text = "select StepName, WorkflowId from Active where CorrelationId = @cid and Type = @t"
+    let text = "select StepName, WorkflowId from Active where CorrelationId = @cid and Type = @t and TimeOut >= SYSUTCDATETIME()"
     use select = conn.CreateCommand()
     select.CommandText <- text
     select.CommandType <- CommandType.Text
@@ -121,13 +121,15 @@ let containsActive (conn : SqlConnection) (cid : string) (t : Type) =
         reader.Dispose()
     }
 
-let deleteActive (conn : SqlConnection) (cid : string) (t : Type) =
-    let text = "delete from Active where CorrelationId = @cid and Type = @t"
+let deleteActive (conn : SqlConnection) (cid : string) (next : string) (wid : Guid) (t : Type) =
+    let text = "delete from Active where CorrelationId = @cid and Type = @t and StepName = @n and WorkflowId = @wid"
     use delete = conn.CreateCommand()
     delete.CommandText <- text
     delete.CommandType <- CommandType.Text
     delete.Parameters.Add (SqlParameter("cid", cid)) |> ignore
     delete.Parameters.Add (SqlParameter("t", t.FullName)) |> ignore
+    delete.Parameters.Add (SqlParameter("n", next)) |> ignore
+    delete.Parameters.Add (SqlParameter("wid", wid)) |> ignore
     delete.ExecuteNonQuery() |> ignore
 
 let workflowActive (conn : SqlConnection) (wid : Guid) =

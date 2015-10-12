@@ -80,7 +80,7 @@ type MemoryActiveStore () =
     interface IActiveStore with
         member x.Add<'a> (active : Active) = 
             x.Add<'a> active.CorrelationId active.NextStep active.WorkflowId active.TimeOut active.TimeOutNextStep
-        member x.Remove<'a> correlationId = x.Remove<'a> correlationId
+        member x.Remove<'a> (correlationId, n, wid) = x.Remove<'a> correlationId
         member x.Continuations<'a> correlationId =
             x.Continuations<'a> correlationId
             |> List.map (fun (a, b, _, _) -> a, b)

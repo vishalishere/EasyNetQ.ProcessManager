@@ -132,7 +132,7 @@ namespace Process3
             var cid = Guid.NewGuid();
             var sendEmail =
                 new SendEmail(cid, state.EmailAddress, state.EmailContent);
-            return Out.Empty.AddRequest(sendEmail, TimeSpan.FromSeconds(4))
+            return Out.Empty.AddTopicRequest(sendEmail, TimeSpan.FromSeconds(4), "Email")
                 .AddCont<EmailSent>(cid.ToString(), "EmailSent", TimeSpan.FromSeconds(5), "TimeOut");
         }
 

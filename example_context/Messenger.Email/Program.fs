@@ -21,9 +21,9 @@ let main args =
 //    use bus = EasyNetQ.RabbitHutch.CreateBus(config.GetResult <@ Rabbit_Connection @>, fun x -> x.Register<IEasyNetQLogger>(fun _ -> Loggers.ConsoleLogger() :> IEasyNetQLogger) |> ignore)
     use bus = EasyNetQ.RabbitHutch.CreateBus(config.GetResult <@ Rabbit_Connection @>)
     let action request =
-        send (new SmtpClient(config.GetResult <@ Smtp_Server @>)) request
-        |> bus.Publish
+        let sent = send (new SmtpClient(config.GetResult <@ Smtp_Server @>)) request
+        bus.Publish(sent, "Email")
     printfn "Email ready"
-    bus.Subscribe ("Messenger.Email", fun r -> action r) |> ignore
+    bus.Subscribe ("Messenger.Email", (fun r -> action r), (fun c -> c.WithTopic("Email") |> ignore)) |> ignore
     System.Console.ReadLine() |> ignore
     0

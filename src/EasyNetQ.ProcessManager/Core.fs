@@ -59,7 +59,7 @@ type IActiveStore =
     /// Add a continuation to the store.
     abstract member Add<'a> : Active -> unit
     /// Remove all continuations related to the CorrelationId and type from the store.
-    abstract member Remove<'a> : CorrelationId -> unit
+    abstract member Remove<'a> : CorrelationId * StepName * WorkflowId -> unit
     /// Get all continuations for type 'a and the given CorrelationId.
     abstract member Continuations<'a> : CorrelationId -> (StepName * WorkflowId) list
     /// Check if there are any outstanding continuations active for the given WorkflowId.
@@ -183,7 +183,7 @@ type Out() =
     /// Add a "request" to the workflow output. This request will be published.
     member x.AddRequest<'message when 'message : not struct> (m, expiry) = Out.AddR<'message> m expiry x
     /// Add a topic based "request" to be published as a result of this workflow step.
-    member x.AddTopicRequest<'message when 'message : not struct> (m, expiry, topic) = Out.AddTopicR m expiry topic x
+    member x.AddTopicRequest<'message when 'message : not struct> (m : 'message, expiry, topic) = Out.AddTopicR m expiry topic x
     /// Add a continuation to be expected as a result of this workflow step.
     /// You cannot both add a continuation and cancel a workflow in the same workflow step.
     /// A TimeOutMessage will be published to be handled by timeOutHandler if the expected
@@ -230,7 +230,7 @@ type private SubscriptionManager (bus : IPMBus, subscriptionId, activeStore : IA
     member private __.receive<'a when 'a : not struct> (a :  'a) =
         let activateProcessor (p: Processor<'a>) =
             let cid = p.ExtractCorrelationId a |> CorrelationId
-            let workflows =
+            let workflowSteps =
                 activeStore.Continuations<'a> cid
                 |> List.map (fun (next, workflowId) ->
                     match p.DispatchMap.TryGetAction (match next with StepName name -> name) with
@@ -244,15 +244,17 @@ type private SubscriptionManager (bus : IPMBus, subscriptionId, activeStore : IA
                             stateStore.Remove workflowId
                         output.Mine.Requests
                         |> Seq.iter (fun p -> p.Publish bus)
-                        workflowId
+                        workflowId, next
                     | false, _ -> failwithf "Active correlation ID %A, but no handler for %A in the subscription manager" cid next )
-            cid, (Seq.distinct workflows)
+            cid, workflowSteps
         match pc.TryGetValue typeof<'a> with
         | true, (:? (Processor<'a> []) as ps) ->
             ps
-            |> Array.map activateProcessor
-            |> Array.map (fun (cid, workflows) -> activeStore.Remove<'a> cid; workflows)
+            |> Seq.map activateProcessor
+            |> Seq.map (fun (cid, workflowSteps) -> workflowSteps |> Seq.map (fun (wid, n) -> cid, n, wid))
             |> Seq.concat
+            |> Seq.map (fun (cid, n, wid) -> activeStore.Remove<'a> (cid, n, wid); wid)
+            |> Seq.distinct
             |> Seq.iter (fun wid -> if not (activeStore.WorkflowActive wid) then stateStore.Remove wid)
         | _ -> ()
     member private x.AddProcessor<'message when 'message : not struct> (processor : Processor<'message>) =
@@ -261,7 +263,7 @@ type private SubscriptionManager (bus : IPMBus, subscriptionId, activeStore : IA
                 :?> Processor<'message> []
                 |> Array.length
                 |> (=) 1 then
-            bus.Subscribe<'message> (subscriptionId, Action<'message>(fun message -> x.receive message))
+            bus.Subscribe<'message> (subscriptionId, Action<'message>(x.receive))
     static member Add extractCorrelationId (dispatchMappings : #seq<_>) (sm : SubscriptionManager) =
         let dispatchMap = DispatchMap()
         dispatchMappings
@@ -271,7 +273,7 @@ type private SubscriptionManager (bus : IPMBus, subscriptionId, activeStore : IA
         let mappings =
             dispatchMappings
             |> Seq.map (fun { Key = key; Func = f } -> key, (fun m s -> f.Invoke(m, s)))
-        SubscriptionManager.Add (fun m -> extractCorrelationId.Invoke m) mappings x
+        SubscriptionManager.Add extractCorrelationId.Invoke mappings x
     member x.AddProcessor<'message when 'message : not struct> (extractCorrelationId : Func<'message, string>, dispatchMapping) =
         x.AddProcessor(extractCorrelationId, [dispatchMapping])
     member private __.StartLogic (output : Out) stateId =
@@ -321,7 +323,7 @@ type private TimeManager (bus : IPMBus, activeStore : IActiveStore, stateStore :
         async {
             activeStore.ProcessElapsed publishTimeOut
             |> Seq.filter (activeStore.WorkflowActive >> not)
-            |> Seq.iter (fun wid -> stateStore.Remove wid)
+            |> Seq.iter stateStore.Remove
 
             do! Async.Sleep (rand.Next(1000,2000))
             return! removeTimedOut ()

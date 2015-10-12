@@ -17,7 +17,7 @@ NUGET
   specs:
     Argu (1.0.0)
     DotLiquid (1.8.0)
-    FSharp.Core (4.0.0.1)
+    FSharp.Core (3.1.2.5)
     FsPickler (1.4.0)
     FsPickler.Json (1.4.0)
       FsPickler (1.4.0)

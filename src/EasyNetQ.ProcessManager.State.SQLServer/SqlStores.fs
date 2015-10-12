@@ -70,10 +70,10 @@ type SqlActiveStore (connString : string) =
             containsActive conn cid typeof<'a>
             |> Seq.map (fun (next, wid) -> StepName next, WorkflowId wid)
             |> Seq.toList
-        member __.Remove<'a> (CorrelationId cid) =
+        member __.Remove<'a> (CorrelationId cid, StepName next, WorkflowId wid) =
             use conn = new SqlConnection(connString)
             conn.Open()
-            deleteActive conn cid typeof<'a>
+            deleteActive conn cid next wid typeof<'a>
         member __.WorkflowActive (WorkflowId wid) =
             use conn = new SqlConnection(connString)
             conn.Open()
