@@ -16,3 +16,10 @@ group Examples
 	nuget fspickler
 	nuget fspickler.json
 	nuget SqlProvider
+
+group Test
+	source https://nuget.org/api/v2
+
+	github fsprojects/FsUnit src/FsUnit.NUnit/FsUnit.fs
+	nuget NUnit
+	nuget FsCheck

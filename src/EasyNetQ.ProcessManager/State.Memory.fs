@@ -29,62 +29,80 @@ type MemoryStateStore () =
         member __.Create (_) =
             MemoryState () :> IState
 
+type private MemoryStoreMessages =
+    | Add of Type * Active
+    | Remove of Type * CorrelationId * StepName * WorkflowId
+    | Conts of Type * CorrelationId * AsyncReplyChannel<(StepName * WorkflowId) list>
+    | WorkflowActive of WorkflowId * AsyncReplyChannel<bool>
+    | CancelWorkflow of WorkflowId
+    | ProcessElapsed of (Elapsed -> unit) * AsyncReplyChannel<WorkflowId seq>
+
 // In memory active store - designed only to be used for testing.
 type MemoryActiveStore () =
-    let store = ConcurrentDictionary<string * Type, (StepName * WorkflowId * DateTime * StepName option) list>()
-    member __.Add<'message> (CorrelationId correlationId) nextStep stateId timeOut timeOutNextStep =
-        store.AddOrUpdate((correlationId, typeof<'message>), [(nextStep, stateId, DateTime.Now + timeOut, timeOutNextStep)], fun _ conts -> (nextStep, stateId, DateTime.Now + timeOut, timeOutNextStep)::conts)
-        |> ignore
-    member __.Remove<'a> (CorrelationId correlationId) =
-        store.TryRemove((correlationId, typeof<'a>)) |> ignore
-    member __.Continuations<'a> (CorrelationId correlationId) =
-        match store.TryGetValue((correlationId, typeof<'a>)) with
-        | true, conts ->
-            conts
-            |> List.filter (fun (_, _, time, _) -> time < DateTime.Now)
-        | _ -> []
-    member __.WorkflowActive wid =
-        store.Values
-        |> Seq.concat
-        |> Seq.exists (fun (_, activeId, _, _) -> activeId = wid)
-    member __.CancelWorkflow wid =
-        let (delete, update) =
-            store
-            |> Seq.fold
-                (fun (delete, update) kv -> 
-                    if kv.Value |> List.forall (fun (_, activeId, _, _) -> activeId = wid) then 
-                        (kv.Key::delete), update 
-                    elif kv.Value |> List.exists (fun (_, activeId, _, _) -> activeId = wid) then 
-                        delete,(kv.Key, (kv.Value |> List.filter (fun (_, activeId, _, _) -> activeId = wid)))::update 
-                    else delete, update)
-                ([], [])
-        delete |> List.map store.TryRemove |> ignore
-        update |> List.map (fun (key, value) -> store.AddOrUpdate(key, value, fun _ _ -> value)) |> ignore
-    member __.ProcessElapsed f =
-        store.Values
-        |> Seq.concat
-        |> Seq.filter (fun (_, _, time, _) -> time < DateTime.Now)
-        |> Seq.filter (fun (_, _, _, next) -> match next with Some _ -> true | None -> false)
-        |> Seq.map (
-            fun (timedOut, wid, _, next) -> 
-                match next with
-                | Some n ->
-                    do f {
-                                TimedOut = timedOut
-                                NextStep = next.Value
-                                WorkflowId = wid 
-                            }
-                    wid
-                | None -> wid)
-        |> Seq.distinct
+    let agent =
+        MailboxProcessor.Start(
+            fun mb ->
+                let rec loop actives =
+                    async {
+                        let! msg = mb.Receive()
+                        match msg with
+                        | Add (t, a) ->
+                            return! loop <| (t, a, DateTime.UtcNow + a.TimeOut)::actives
+                        | WorkflowActive (wid, rc) ->
+                            actives
+                            |> List.exists (fun (_, a, _) -> a.WorkflowId = wid)
+                            |> rc.Reply
+                            return! loop actives
+                        | Remove (t, cid, next, wid) ->
+                            return!
+                                actives
+                                |> List.filter (
+                                    fun (t', a, _) ->
+                                        (t' = t 
+                                        && cid = a.CorrelationId
+                                        && next = a.NextStep
+                                        && wid = a.WorkflowId)
+                                        |> not)
+                                |> loop
+                        | CancelWorkflow wid ->
+                            return!
+                                actives
+                                |> List.filter (fun (_, a, _) -> a.WorkflowId <> wid)
+                                |> loop
+                        | Conts (t, cid, rc) ->
+                            actives
+                            |> List.filter (fun (t', a, to') -> t = t' && a.CorrelationId = cid && to' > DateTime.UtcNow)
+                            |> List.map (fun (_, a, _) -> a.NextStep, a.WorkflowId)
+                            |> rc.Reply
+                            return! loop actives
+                        | ProcessElapsed (f, rc) ->
+                            let timedOut, stillActive =
+                                actives
+                                |> List.partition (fun (_, _, to') -> to' <= DateTime.UtcNow)
+                            timedOut
+                            |> List.iter (fun (_, a, _) ->
+                                                    match a.TimeOutNextStep with
+                                                    | Some n -> f { TimedOut = a.NextStep; NextStep = n; WorkflowId = a.WorkflowId }
+                                                    | None -> ())
+                            timedOut
+                            |> List.map (fun (_, { WorkflowId = w }, _) -> w)
+                            |> Seq.distinct
+                            |> rc.Reply
+                            return! loop stillActive
+                    }
+                loop []
+            )
     interface IActiveStore with
-        member x.Add<'a> (active : Active) = 
-            x.Add<'a> active.CorrelationId active.NextStep active.WorkflowId active.TimeOut active.TimeOutNextStep
-        member x.Remove<'a> (correlationId, n, wid) = x.Remove<'a> correlationId
-        member x.Continuations<'a> correlationId =
-            x.Continuations<'a> correlationId
-            |> List.map (fun (a, b, _, _) -> a, b)
-        member x.WorkflowActive wid = x.WorkflowActive wid
-        member x.CancelWorkflow wid = x.CancelWorkflow wid
-        member x.ProcessElapsed f = x.ProcessElapsed f
+        member __.Add<'a> (active : Active) = 
+            Add (typeof<'a>, active) |> agent.Post
+        member __.Remove<'a> (correlationId, n, wid) =
+            Remove (typeof<'a>, correlationId, n, wid) |> agent.Post
+        member __.Continuations<'a> correlationId =
+            agent.PostAndReply(fun rc -> Conts (typeof<'a>, correlationId, rc))
+        member __.WorkflowActive wid =
+            agent.PostAndReply(fun rc -> WorkflowActive (wid, rc))
+        member __.CancelWorkflow wid =
+            CancelWorkflow wid |> agent.Post
+        member __.ProcessElapsed f =
+            agent.PostAndReply(fun rc -> ProcessElapsed (f, rc))
 

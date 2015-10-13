@@ -40,6 +40,10 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Process2", "examples\Proces
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Process3", "examples\Process3\Process3.csproj", "{0DBCFA9E-DC45-4524-925A-5A83B1B3CADB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AC7B1975-2B9B-4B12-B552-806083540D72}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EasyNetQ.ProcessManager.Tests", "tests\EasyNetQ.ProcessManager.Tests\EasyNetQ.ProcessManager.Tests.fsproj", "{2BD113A7-96C2-4ED0-8291-299E82075D66}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +86,10 @@ Global
 		{0DBCFA9E-DC45-4524-925A-5A83B1B3CADB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DBCFA9E-DC45-4524-925A-5A83B1B3CADB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0DBCFA9E-DC45-4524-925A-5A83B1B3CADB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BD113A7-96C2-4ED0-8291-299E82075D66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BD113A7-96C2-4ED0-8291-299E82075D66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BD113A7-96C2-4ED0-8291-299E82075D66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BD113A7-96C2-4ED0-8291-299E82075D66}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -96,5 +104,6 @@ Global
 		{BD305025-D750-4DD2-A6EE-4DF1102AF58A} = {2E098257-02EC-4EBE-B0BE-6F94C8F1E6AC}
 		{D9033230-FF12-4DB6-B898-DD7B470D7394} = {2E098257-02EC-4EBE-B0BE-6F94C8F1E6AC}
 		{0DBCFA9E-DC45-4524-925A-5A83B1B3CADB} = {2E098257-02EC-4EBE-B0BE-6F94C8F1E6AC}
+		{2BD113A7-96C2-4ED0-8291-299E82075D66} = {AC7B1975-2B9B-4B12-B552-806083540D72}
 	EndGlobalSection
 EndGlobal

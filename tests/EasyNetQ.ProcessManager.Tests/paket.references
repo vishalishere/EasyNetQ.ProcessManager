@@ -1,0 +1,6 @@
+﻿EasyNetQ
+
+group Test
+FsCheck
+NUnit
+File:FsUnit.fs

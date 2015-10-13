@@ -1,26 +1,39 @@
 NUGET
   remote: https://nuget.org/api/v2
   specs:
-    EasyNetQ (0.50.7.399)
-      RabbitMQ.Client (>= 3.5.4)
-    RabbitMQ.Client (3.5.4)
+    EasyNetQ (0.50.10.403)
+      RabbitMQ.Client (>= 3.5.6)
+    RabbitMQ.Client (3.5.6)
 
 GROUP Build
 NUGET
   remote: https://nuget.org/api/v2
   specs:
-    FAKE (4.4.4)
+    FAKE (4.5.6)
 
 GROUP Examples
 NUGET
   remote: https://nuget.org/api/v2
   specs:
-    Argu (1.0.0)
+    Argu (1.1.0)
     DotLiquid (1.8.0)
-    FSharp.Core (3.1.2.5)
-    FsPickler (1.4.0)
-    FsPickler.Json (1.4.0)
-      FsPickler (1.4.0)
+    FSharp.Core (4.0.0.1)
+    FsPickler (1.5.2)
+    FsPickler.Json (1.5.2)
+      FsPickler (1.5.2)
       Newtonsoft.Json (>= 6.0.5)
     Newtonsoft.Json (7.0.1)
     SQLProvider (0.0.9-alpha)
+
+GROUP Test
+NUGET
+  remote: https://nuget.org/api/v2
+  specs:
+    FsCheck (2.1.0)
+      FSharp.Core (>= 3.1.2.5)
+    FSharp.Core (4.0.0.1)
+    NUnit (2.6.4)
+GITHUB
+  remote: fsprojects/FsUnit
+  specs:
+    src/FsUnit.NUnit/FsUnit.fs (eb9f88b5080c8ff462ffb18bfe36d0985bd30292)
