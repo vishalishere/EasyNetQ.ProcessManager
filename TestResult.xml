@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--This file represents the results of running a test suite-->
+<test-results name="C:\rip\EasyNetQ.ProcessManager\tests\EasyNetQ.ProcessManager.Tests\bin\Release\EasyNetQ.ProcessManager.Tests.dll" total="4" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2015-10-14" time="14:39:54">
+  <environment nunit-version="2.6.4.14350" clr-version="2.0.50727.8009" os-version="Microsoft Windows NT 6.2.9200.0" platform="Win32NT" cwd="C:\rip\EasyNetQ.ProcessManager" machine-name="FREDONIA" user="Michael.Newton" user-domain="15BELOW" />
+  <culture-info current-culture="en-GB" current-uiculture="en-US" />
+  <test-suite type="Assembly" name="C:\rip\EasyNetQ.ProcessManager\tests\EasyNetQ.ProcessManager.Tests\bin\Release\EasyNetQ.ProcessManager.Tests.dll" executed="True" result="Success" success="True" time="4.245" asserts="0">
+    <results>
+      <test-suite type="Namespace" name="EasyNetQ" executed="True" result="Success" success="True" time="4.227" asserts="0">
+        <results>
+          <test-suite type="Namespace" name="ProcessManager" executed="True" result="Success" success="True" time="4.226" asserts="0">
+            <results>
+              <test-suite type="Namespace" name="Tests" executed="True" result="Success" success="True" time="4.226" asserts="0">
+                <results>
+                  <test-suite type="TestFixture" name="ActiveStore" executed="True" result="Success" success="True" time="3.539" asserts="0">
+                    <results>
+                      <test-case name="EasyNetQ.ProcessManager.Tests.ActiveStore.Create memory active store" executed="True" result="Success" success="True" time="0.052" asserts="0" />
+                      <test-case name="EasyNetQ.ProcessManager.Tests.ActiveStore.Run properties for memory state" executed="True" result="Success" success="True" time="3.457" asserts="0" />
+                    </results>
+                  </test-suite>
+                  <test-suite type="TestFixture" name="StateStore" executed="True" result="Success" success="True" time="0.674" asserts="0">
+                    <results>
+                      <test-case name="EasyNetQ.ProcessManager.Tests.StateStore.Create memory state store" executed="True" result="Success" success="True" time="0.003" asserts="0" />
+                      <test-case name="EasyNetQ.ProcessManager.Tests.StateStore.Run properties for memory state" executed="True" result="Success" success="True" time="0.669" asserts="0" />
+                    </results>
+                  </test-suite>
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

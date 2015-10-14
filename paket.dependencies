@@ -6,6 +6,7 @@ group Build
     source https://nuget.org/api/v2
 
 	nuget FAKE
+	nuget NUnit.Runners
 
 group Examples
     source https://nuget.org/api/v2
