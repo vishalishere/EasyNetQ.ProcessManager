@@ -19,7 +19,7 @@ type SQLStateGenerator =
     static member IActiveState () =
         Gen.fresh (fun () -> SqlActiveStore(ConnString) :> IActiveStore) |> Arb.fromGen
 
-type Properties() =
+type Properties =
     static member ``Add continuation should make workflow active`` (sut : IActiveStore) (cont : Active) =
         sut.Add cont
         let r = sut.WorkflowActive cont.WorkflowId
@@ -72,13 +72,13 @@ type Properties() =
 
 [<Test>]
 let ``Run properties for memory state`` () =
-    Arb.register<CoreGenerators>() |> ignore
-    Arb.register<MemoryStateGenerator>() |> ignore
-    FsCheck.Check.QuickThrowOnFailureAll<Properties>()
+    FsCheck.Check.All<Properties>(
+        { Config.QuickThrowOnFailure with
+            Arbitrary = [typeof<CoreGenerators>;typeof<MemoryStateGenerator>] })
 
 [<Explicit>]
 [<Test>]
 let ``Run properties for sql state`` () =
-    Arb.register<CoreGenerators>() |> ignore
-    Arb.register<SQLStateGenerator>() |> ignore
-    FsCheck.Check.QuickThrowOnFailureAll<Properties>()
+    FsCheck.Check.All<Properties>(
+        { Config.QuickThrowOnFailure with
+            Arbitrary = [typeof<CoreGenerators>;typeof<SQLStateGenerator>] })

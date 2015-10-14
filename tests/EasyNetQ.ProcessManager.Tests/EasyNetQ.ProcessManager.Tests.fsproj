@@ -64,6 +64,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CoreGenerators.fs" />
     <Compile Include="ActiveStore.fs" />
+    <Compile Include="StateStore.fs" />
     <None Include="paket.references" />
     <Content Include="App.config" />
   </ItemGroup>
