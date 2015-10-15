@@ -74,6 +74,7 @@ type IActiveStore =
 /// Interface to represent the transport mechanism used to provide type based
 /// routing. Optionally allows for topics to be specified.
 type IPMBus =
+    inherit IDisposable
     /// Publish a message of type 'a with an expiring time after which the
     /// transport guarantees it will not be delivered.
     abstract member Publish<'a when 'a : not struct> : ('a * TimeSpan) -> unit
@@ -114,8 +115,18 @@ type EasyNetQPMBus (bus : IBus) =
             bus.Subscribe<'a>(subscriptionId, action) |> ignore
         member __.Subscribe<'a when 'a : not struct> (subscriptionId, topic, action: Action<'a>): unit = 
             bus.Subscribe<'a>(subscriptionId, action, Action<ISubscriptionConfiguration>(fun x -> x.WithTopic topic |> ignore)) |> ignore
+    interface IDisposable with
+        member __.Dispose() =
+            bus.Dispose()
+
+type IRequestInfo =
+    abstract member Type : Type
+    abstract member Message : obj
+    abstract member Topic : string option
+    abstract member TimeOut : TimeSpan
 
 type internal IRequest =
+    inherit IRequestInfo
     abstract member Publish : IPMBus -> unit
 
 type internal Request<'a when 'a : not struct> =
@@ -128,8 +139,31 @@ type internal Request<'a when 'a : not struct> =
                 bus.Publish<'a> ((request, expiry))
             | TopicRequest (request, expiry, topic) ->
                 bus.Publish<'a> ((request, expiry, topic))
+    interface IRequestInfo with
+        member __.Type =
+            typeof<'a>
+        member x.Message =
+            match x with
+            | Request (m, _) -> box m
+            | TopicRequest (m, _, _) -> box m
+        member x.Topic =
+            match x with
+            | Request _ -> None
+            | TopicRequest (_, _, t) -> Some t
+        member x.TimeOut =
+            match x with
+            | Request (_, t) -> t
+            | TopicRequest (_, t, _) -> t
+
+type IContinuationInfo =
+    abstract member Handler : string
+    abstract member TimeOut : TimeSpan
+    abstract member TimeOutHandler : string option
+    abstract member Type : Type
+    abstract member CorrelationId : string
 
 type internal IContinuation =
+    inherit IContinuationInfo
     abstract member AddActive : IActiveStore * WorkflowId -> unit
 
 type internal Continuation<'message when 'message : not struct> (correlationId, handler, timeOut, timeOutHandler) =
@@ -144,6 +178,17 @@ type internal Continuation<'message when 'message : not struct> (correlationId, 
                 TimeOut = timeOut
                 TimeOutNextStep = Option.map StepName timeOutHandler
             }
+    interface IContinuationInfo with
+        member __.Handler =
+            handler
+        member __.TimeOut =
+            timeOut
+        member __.TimeOutHandler =
+            timeOutHandler
+        member __.Type = 
+            typeof<'a>
+        member __.CorrelationId = 
+            correlationId
 
 type internal CallBacks =
     | Cancel
@@ -194,6 +239,19 @@ type Out() =
     /// You cannot both add a continuation and cancel a workflow in the same workflow step.
     member x.AddCont<'response when 'response : not struct> (correlationId, handler, timeOut) =
         Out.AddC<'response> correlationId handler timeOut None x
+    /// Read only sequence of requests in this instance
+    member x.Requests () =
+        x.Mine.Requests |> Seq.map (fun r -> r :> IRequestInfo)
+    /// Read only sequence of continuations in this instance
+    member x.Continuations () =
+        match x.Mine.Continuations with
+        | Conts cs -> cs |> Seq.map (fun c -> c :> IContinuationInfo)
+        | Cancel -> Seq.empty
+    /// Check if this Out will cancel the workflow
+    member x.WillCancel =
+        match x.Mine.Continuations with
+        | Conts _ -> false
+        | Cancel -> true
 
 type private DispatchMap<'message when 'message : not struct>() = 
     let storage = Dictionary<string, 'message -> IState -> Out>()
@@ -367,4 +425,8 @@ type ProcessManager (bus : IPMBus, subscriptionId, activeStore, stateStore) =
     /// recieved. startFunc will be given the message and an initial, empty, IState
     member __.StartFromSubcribe<'startMessage when 'startMessage : not struct>(startFunc, topic) =
         subscriptionManager.StartFromSubscibe<'startMessage>(startFunc, topic)
+    interface IDisposable with
+        member __.Dispose() =
+            bus.Dispose()
+           
 
