@@ -77,11 +77,11 @@ type IPMBus =
     inherit IDisposable
     /// Publish a message of type 'a with an expiring time after which the
     /// transport guarantees it will not be delivered.
-    abstract member Publish<'a when 'a : not struct> : ('a * TimeSpan) -> unit
+    abstract member Publish<'a when 'a : not struct> : 'a * TimeSpan -> unit
     /// Publish a message of type 'a with an expiring time after which the
     /// transport guarantees it will not be delivered, and a topic to allow
     /// topic based subscribers to recieve it.
-    abstract member Publish<'a when 'a : not struct> : ('a * TimeSpan * string) -> unit
+    abstract member Publish<'a when 'a : not struct> : 'a * TimeSpan * string -> unit
     /// Subscribe to all messages of type 'a and call the action when they arrive
     abstract member Subscribe<'a when 'a : not struct> : string * Action<'a> -> unit
     /// Subscribe to messages of type 'a and a matching topic, and call the action when they arrive
@@ -107,9 +107,9 @@ type EasyNetQPMBus (bus : IBus) =
     let dms = bus.Advanced.Container.Resolve<IMessageDeliveryModeStrategy>()
     let ped = bus.Advanced.Container.Resolve<Producer.IPublishExchangeDeclareStrategy>()
     interface IPMBus with
-        member __.Publish<'a when 'a : not struct> ((message : 'a, expire)) =
+        member __.Publish<'a when 'a : not struct> (message : 'a, expire) =
             publish<'a> bus dms ped message expire None
-        member __.Publish<'a when 'a : not struct> ((message : 'a, expire, topic)) =
+        member __.Publish<'a when 'a : not struct> (message : 'a, expire, topic) =
             publish<'a> bus dms ped message expire (Some topic)
         member __.Subscribe<'a when 'a : not struct> (subscriptionId, action) =
             bus.Subscribe<'a>(subscriptionId, action) |> ignore
@@ -136,9 +136,9 @@ type internal Request<'a when 'a : not struct> =
         member x.Publish (bus : IPMBus) =
             match x with
             | Request(request, expiry) ->
-                bus.Publish<'a> ((request, expiry))
+                bus.Publish<'a> (request, expiry)
             | TopicRequest (request, expiry, topic) ->
-                bus.Publish<'a> ((request, expiry, topic))
+                bus.Publish<'a> (request, expiry, topic)
     interface IRequestInfo with
         member __.Type =
             typeof<'a>
@@ -186,7 +186,7 @@ type internal Continuation<'message when 'message : not struct> (correlationId, 
         member __.TimeOutHandler =
             timeOutHandler
         member __.Type = 
-            typeof<'a>
+            typeof<'message>
         member __.CorrelationId = 
             correlationId
 
@@ -375,7 +375,7 @@ type private TimeManager (bus : IPMBus, activeStore : IActiveStore, stateStore :
         let a = { CorrelationId = cid.ToString() |> CorrelationId; NextStep = e.NextStep; TimeOut = TimeSpan.FromDays 1.0; TimeOutNextStep = None; WorkflowId = e.WorkflowId }
         activeStore.Add<TimeOutMessage> a
         let (StepName t) = e.TimedOut
-        bus.Publish<TimeOutMessage>(({ CorrelationId = cid; TimedOutStep = t }, TimeSpan.FromHours 23.0))
+        bus.Publish<TimeOutMessage>({ CorrelationId = cid; TimedOutStep = t }, TimeSpan.FromHours 23.0)
 
     let rec removeTimedOut () =
         async {

@@ -44,6 +44,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AC7B1975
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EasyNetQ.ProcessManager.Tests", "tests\EasyNetQ.ProcessManager.Tests\EasyNetQ.ProcessManager.Tests.fsproj", "{2BD113A7-96C2-4ED0-8291-299E82075D66}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EasyNetQ.ProcessManager.Transport.EasyNetQLegacy", "src\EasyNetQ.ProcessManager.Transport.EasyNetQLegacy\EasyNetQ.ProcessManager.Transport.EasyNetQLegacy.fsproj", "{E65538B0-3B8E-4570-8F30-9818161C2F1F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,6 +92,10 @@ Global
 		{2BD113A7-96C2-4ED0-8291-299E82075D66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2BD113A7-96C2-4ED0-8291-299E82075D66}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2BD113A7-96C2-4ED0-8291-299E82075D66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E65538B0-3B8E-4570-8F30-9818161C2F1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E65538B0-3B8E-4570-8F30-9818161C2F1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E65538B0-3B8E-4570-8F30-9818161C2F1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E65538B0-3B8E-4570-8F30-9818161C2F1F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -105,5 +111,6 @@ Global
 		{D9033230-FF12-4DB6-B898-DD7B470D7394} = {2E098257-02EC-4EBE-B0BE-6F94C8F1E6AC}
 		{0DBCFA9E-DC45-4524-925A-5A83B1B3CADB} = {2E098257-02EC-4EBE-B0BE-6F94C8F1E6AC}
 		{2BD113A7-96C2-4ED0-8291-299E82075D66} = {AC7B1975-2B9B-4B12-B552-806083540D72}
+		{E65538B0-3B8E-4570-8F30-9818161C2F1F} = {F420D54C-F137-4027-A57B-0926850A52EA}
 	EndGlobalSection
 EndGlobal

@@ -41,9 +41,9 @@ let rec private loop subscribers (agent : MailboxProcessor<BusControlMessage>) =
 type InProcessPMBus () =
     let agent = MailboxProcessor.Start(loop [])
     interface IPMBus with
-        member __.Publish<'a when 'a : not struct> ((message : 'a, expire : TimeSpan)) =
+        member __.Publish<'a when 'a : not struct> (message : 'a, expire : TimeSpan) =
             agent.Post (Publish (box message, typeof<'a>, DateTime.UtcNow + expire, None))
-        member __.Publish<'a when 'a : not struct> ((message : 'a, expire : TimeSpan, topic : string)) =
+        member __.Publish<'a when 'a : not struct> (message : 'a, expire : TimeSpan, topic : string) =
             agent.Post (Publish (box message, typeof<'a>, DateTime.UtcNow + expire, Some topic))
         member __.Subscribe<'a when 'a : not struct> (subscriptionId : string, action : Action<'a>) =
             agent.Post (Subscribe ({ SubscriptionId = subscriptionId; Topic = "#"; CallBack = action }))

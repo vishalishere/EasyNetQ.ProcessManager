@@ -134,7 +134,7 @@ type Properties =
         let v2 = String s2
         let state = sut.Create wid
         storeFunc state v1
-        sut.Add wid state        
+        sut.Add wid state      
         let state = sut.Get wid
         state.AddOrUpdate s2.Get (Func<string, string>(fun _ -> s2.Get)) |> ignore
         let state = sut.Get wid

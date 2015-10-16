@@ -24,3 +24,9 @@ group Test
 	github fsprojects/FsUnit src/FsUnit.NUnit/FsUnit.fs
 	nuget NUnit
 	nuget FsCheck
+
+group Legacy
+	source https://nuget.org/api/v2
+
+	nuget EasyNetQ 0.26.0.181
+	nuget RabbitMQ.Client 3.1.5

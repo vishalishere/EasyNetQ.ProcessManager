@@ -6,10 +6,13 @@ let buildSrc () =
     build
         (fun d -> { d with Properties = ["Configuration","Release";"Optimize","True"]; Targets = ["Clean";"Build"] }) 
         ("src" @@ "EasyNetQ.ProcessManager.State.SqlServer" @@ "EasyNetQ.ProcessManager.State.SqlServer.fsproj")
+    build
+        (fun d -> { d with Properties = ["Configuration","Release";"Optimize","True"]; Targets = ["Clean";"Build"] }) 
+        ("src" @@ "EasyNetQ.ProcessManager.Transport.EasyNetQLegacy" @@ "EasyNetQ.ProcessManager.Transport.EasyNetQLegacy.fsproj")
 
 let buildTest () =
     build
-        (fun d -> { d with Properties = ["Configuration","Release";"Optimize","True"]; Targets = ["Clean";"Build"] }) 
+        (fun d -> { d with Properties = ["Configuration","Release";"Optiimze","True"]; Targets = ["Clean";"Build"] }) 
         ("tests" @@ "EasyNetQ.ProcessManager.Tests" @@ "EasyNetQ.ProcessManager.Tests.fsproj")
 
 let package () =
