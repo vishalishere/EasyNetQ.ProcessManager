@@ -77,11 +77,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\..\src\EasyNetQ.ProcessManager.State.SQLServer\EasyNetQ.ProcessManager.State.SQLServer.fsproj">
-      <Name>EasyNetQ.ProcessManager.State.SQLServer</Name>
-      <Project>{dd04c11c-9b12-48c6-9cad-e7a1a79f9807}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\EasyNetQ.ProcessManager\EasyNetQ.ProcessManager.fsproj">
       <Name>EasyNetQ.ProcessManager</Name>
       <Project>{a3f7f983-a788-488b-98b9-0e357eb345e4}</Project>

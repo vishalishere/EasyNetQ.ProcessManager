@@ -12,7 +12,7 @@ let buildSrc () =
 
 let buildTest () =
     build
-        (fun d -> { d with Properties = ["Configuration","Release";"Optiimze","True"]; Targets = ["Clean";"Build"] }) 
+        (fun d -> { d with Properties = ["Configuration","Release";"Optimize","True"]; Targets = ["Clean";"Build"] }) 
         ("tests" @@ "EasyNetQ.ProcessManager.Tests" @@ "EasyNetQ.ProcessManager.Tests.fsproj")
 
 let package () =

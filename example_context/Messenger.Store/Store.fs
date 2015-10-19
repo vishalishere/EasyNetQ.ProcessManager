@@ -1,64 +1,77 @@
 ﻿open System
-open FSharp.Data.Sql
+open EasyNetQ
 open Nessos.Argu
-open Nessos.FsPickler
 open Messenger.Messages.Store
 
 type StoreConfig =
     | [<Mandatory>] Rabbit_Connection of string
-    | [<Mandatory>] Sql_Connection of string
     with
         interface IArgParserTemplate with
             member ec.Usage =
                 match ec with
                 | Rabbit_Connection _ -> "specify host name of rabbitmq server"
-                | Sql_Connection _ -> "sql server connection string"
 
-type db = SqlDataProvider<ConnectionString = "Server=(local);Database=Messenger;Trusted_Connection=true">
 let parser = ArgumentParser.Create<StoreConfig>()
 let config = parser.Parse()
-let ctx = db.GetDataContext(config.GetResult <@ Sql_Connection @>)
-let json = Json.FsPickler.CreateJsonSerializer(omitHeader = true)
 
-let storeModel (sm : StoreModel) : ModelStored =
-    let modelJson = json.PickleToString(sm.Model)
-    let row = ctx.``[dbo].[Model]``.Create()
-    row.model <- modelJson
-    ctx.SubmitUpdates()
-    { ModelId = row.model_id; CorrelationId = sm.CorrelationId }
+type Model =
+    | Store of StoreModel
+    | BroadCast of BroadcastModel
 
-let storeTemplate (st : StoreTemplate) : TemplateStored =
-    let row = ctx.``[dbo].[Templates]``.Create()
-    row.template_name <- st.Name
-    row.template <- st.Template
-    ctx.SubmitUpdates()
-    { TemplateId = row.template_id; CorrelationId = st.CorrelationId }
+let modelStore (bus : IBus) =
+    MailboxProcessor.Start(
+        fun agent ->
+            let rec loop i m =
+                async {
+                    let! msg = agent.Receive()
+                    match msg with
+                    | Model.Store sm ->
+                        bus.Publish { ModelStored.CorrelationId = sm.CorrelationId; ModelId = i }
+                        return!
+                            Map.add i sm.Model m
+                            |> loop (i + 1)
+                    | BroadCast bm ->
+                        let model = Map.find bm.ModelId m
+                        bus.Publish { ModelBroadcasted.CorrelationId = bm.CorrelationId; Model = model; ModelId = bm.ModelId }
+                        return! loop i m
+                }
+            loop 0 Map.empty
+    )
 
-let broadcastModel (bm : BroadcastModel) : ModelBroadcasted =
-    let modelRow =
-        ctx.``[dbo].[Model]``
-        |> Seq.where (fun m -> m.model_id = bm.ModelId)
-        |> Seq.exactlyOne
-    let model =
-        json.UnPickleOfString modelRow.model
-    { CorrelationId = bm.CorrelationId; ModelId = modelRow.model_id; Model = model }
+type Template =
+    | Store of StoreTemplate
+    | BroadCast of BroadcastTemplate
 
-let broadcastTemplate (bt : BroadcastTemplate) =
-    let templateRow =
-        ctx.``[dbo].[Templates]``
-        |> Seq.where (fun t -> t.template_id = bt.TemplateId)
-        |> Seq.exactlyOne
-    { CorrelationId = bt.CorrelationId; TemplateId = bt.TemplateId; Template = templateRow.template; Name = templateRow.template_name}
+let templateStore (bus : IBus) =
+    MailboxProcessor.Start(
+        fun agent ->
+            let rec loop i m =
+                async {
+                    let! msg = agent.Receive()
+                    match msg with
+                    | Template.Store sm ->
+                        bus.Publish { TemplateStored.CorrelationId = sm.CorrelationId; TemplateId = i }
+                        return!
+                            Map.add i (sm.Name, sm.Template) m
+                            |> loop (i + 1)
+                    | BroadCast bm ->
+                        let name, template = Map.find bm.TemplateId m
+                        bus.Publish { TemplateBroadcasted.CorrelationId = bm.CorrelationId; Template = template; TemplateId = bm.TemplateId; Name = name }
+                        return! loop i m
+                }
+            loop 0 Map.empty
+    )
 
 [<EntryPoint>]
 let main argv = 
-    //use bus = EasyNetQ.RabbitHutch.CreateBus(config.GetResult <@ Rabbit_Connection @>, fun x -> x.Register<IEasyNetQLogger>(fun _ -> Loggers.ConsoleLogger() :> IEasyNetQLogger) |> ignore)
     use bus = EasyNetQ.RabbitHutch.CreateBus(config.GetResult <@ Rabbit_Connection @>)
     let subscriptionId = "Messenger.Store"
-    bus.Subscribe(subscriptionId, fun st -> storeTemplate st |> bus.Publish) |> ignore
-    bus.Subscribe(subscriptionId, fun sm -> storeModel sm |> bus.Publish) |> ignore
-    bus.Subscribe(subscriptionId, fun bt -> broadcastTemplate bt |> bus.Publish) |> ignore
-    bus.Subscribe(subscriptionId, fun bm -> broadcastModel bm |> bus.Publish) |> ignore
+    let mStore = modelStore bus
+    let tStore = templateStore bus
+    bus.Subscribe(subscriptionId, fun st -> st |> Template.Store |> tStore.Post) |> ignore
+    bus.Subscribe(subscriptionId, fun sm -> sm |> Model.Store |> mStore.Post) |> ignore
+    bus.Subscribe(subscriptionId, fun bt -> bt |> Template.BroadCast |> tStore.Post) |> ignore
+    bus.Subscribe(subscriptionId, fun bm -> bm |> Model.BroadCast |> mStore.Post) |> ignore
     printfn "Store ready"
     Console.ReadLine() |> ignore
     0

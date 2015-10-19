@@ -51,14 +51,14 @@ namespace Process3
             var addressCid = Guid.NewGuid();
             return
                 Out.Empty
-                    .AddRequest(new StoreModel(modelCid, model), TimeSpan.FromSeconds(4))
-                    .AddCont<ModelStored>(modelCid.ToString(), ModelStoredCheckRenderContentKey, TimeSpan.FromSeconds(5), "TimeOut")
-                    .AddCont<ModelStored>(modelCid.ToString(), ModelStoredCheckRenderAddressKey, TimeSpan.FromSeconds(5), "TimeOut")
-                    .AddRequest(new StoreTemplate(contentCid, "content template", contentTemplate), TimeSpan.FromSeconds(4))
-                    .AddCont<TemplateStored>(contentCid.ToString(), ContentTemplateStoredCheckRenderContentKey, TimeSpan.FromSeconds(5),
+                    .Send(new StoreModel(modelCid, model), TimeSpan.FromSeconds(4))
+                    .Expect<ModelStored>(modelCid.ToString(), ModelStoredCheckRenderContentKey, TimeSpan.FromSeconds(5), "TimeOut")
+                    .Expect<ModelStored>(modelCid.ToString(), ModelStoredCheckRenderAddressKey, TimeSpan.FromSeconds(5), "TimeOut")
+                    .Send(new StoreTemplate(contentCid, "content template", contentTemplate), TimeSpan.FromSeconds(4))
+                    .Expect<TemplateStored>(contentCid.ToString(), ContentTemplateStoredCheckRenderContentKey, TimeSpan.FromSeconds(5),
                         "TimeOut")
-                    .AddRequest(new StoreTemplate(addressCid, "address template", addressTemplate), TimeSpan.FromSeconds(4))
-                    .AddCont<TemplateStored>(addressCid.ToString(), AddressTemplateStoredCheckRenderAddressKey, TimeSpan.FromSeconds(5),
+                    .Send(new StoreTemplate(addressCid, "address template", addressTemplate), TimeSpan.FromSeconds(4))
+                    .Expect<TemplateStored>(addressCid.ToString(), AddressTemplateStoredCheckRenderAddressKey, TimeSpan.FromSeconds(5),
                         "TimeOut");
         }
 
@@ -70,8 +70,8 @@ namespace Process3
                 new RequestRender(cid, state.ContentTemplateId.Value, state.ModelId.Value);
             return
                 Out.Empty
-                    .AddRequest(renderContent, TimeSpan.FromSeconds(4))
-                    .AddCont<RenderComplete>(cid.ToString(), ContentRenderedCheckSendEmailKey, TimeSpan.FromSeconds(5),
+                    .Send(renderContent, TimeSpan.FromSeconds(4))
+                    .Expect<RenderComplete>(cid.ToString(), ContentRenderedCheckSendEmailKey, TimeSpan.FromSeconds(5),
                         "TimeOut");
         }
 
@@ -81,8 +81,8 @@ namespace Process3
             var cid = Guid.NewGuid();
             var renderContent =
                 new RequestRender(cid, state.AddressTemplateId.Value, state.ModelId.Value);
-            return Out.Empty.AddRequest(renderContent, TimeSpan.FromSeconds(4))
-                .AddCont<RenderComplete>(cid.ToString(), AddressRenderedCheckSendEmailKey, TimeSpan.FromSeconds(5),
+            return Out.Empty.Send(renderContent, TimeSpan.FromSeconds(4))
+                .Expect<RenderComplete>(cid.ToString(), AddressRenderedCheckSendEmailKey, TimeSpan.FromSeconds(5),
                     "TimeOut");
         }
 
@@ -132,8 +132,8 @@ namespace Process3
             var cid = Guid.NewGuid();
             var sendEmail =
                 new SendEmail(cid, state.EmailAddress, state.EmailContent);
-            return Out.Empty.AddTopicRequest(sendEmail, TimeSpan.FromSeconds(4), "Email")
-                .AddCont<EmailSent>(cid.ToString(), "EmailSent", TimeSpan.FromSeconds(5), "TimeOut");
+            return Out.Empty.Send(sendEmail, TimeSpan.FromSeconds(4), "Email")
+                .Expect<EmailSent>(cid.ToString(), "EmailSent", TimeSpan.FromSeconds(5), "TimeOut");
         }
 
         public static Out AddressRenderedCheckSendEmail(RenderComplete rc, IState state)

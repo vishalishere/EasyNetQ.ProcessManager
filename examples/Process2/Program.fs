@@ -30,8 +30,8 @@ module Workflow =
     let storeModel model =
         let request = { StoreModel.CorrelationId = Guid.NewGuid(); Model = model }
         Out.Empty
-        |> Out.AddR request (TimeSpan.FromMinutes 4.0)
-        |> Out.AddC<ModelStored> (request.CorrelationId.ToString()) "StoreTemplate" (TimeSpan.FromMinutes 5.0) (Some "TimeOut")
+        |> Out.send request (TimeSpan.FromMinutes 4.0)
+        |> Out.expect<ModelStored> (request.CorrelationId.ToString()) "StoreTemplate" (TimeSpan.FromMinutes 5.0) (Some "TimeOut")
 
     let start () =
         storeModel model
@@ -40,16 +40,16 @@ module Workflow =
         let request = { StoreTemplate.CorrelationId  = modelStored.CorrelationId; Name = "mytemplate"; Template = template }
         state.GetOrAdd<int> modelStored.ModelId |> ignore
         Out.Empty
-        |> Out.AddR request (TimeSpan.FromMinutes 4.0)
-        |> Out.AddC<TemplateStored> (request.CorrelationId.ToString()) "RenderEmail" (TimeSpan.FromMinutes 5.0) (Some "TimeOut")
+        |> Out.send request (TimeSpan.FromMinutes 4.0)
+        |> Out.expect<TemplateStored> (request.CorrelationId.ToString()) "RenderEmail" (TimeSpan.FromMinutes 5.0) (Some "TimeOut")
 
     let renderEmail (templateStored : TemplateStored) (state : IState) =
         match state.Get<int> () with
         | Some i ->
             let request = { RequestRender.CorrelationId = templateStored.CorrelationId; TemplateId = templateStored.TemplateId; ModelId = i }
             Out.Empty
-            |> Out.AddR request (TimeSpan.FromMinutes 4.0)
-            |> Out.AddC<RenderComplete> (request.CorrelationId.ToString()) "SendEmail" (TimeSpan.FromMinutes 5.0) (Some "TimeOut")
+            |> Out.send request (TimeSpan.FromMinutes 4.0)
+            |> Out.expect<RenderComplete> (request.CorrelationId.ToString()) "SendEmail" (TimeSpan.FromMinutes 5.0) (Some "TimeOut")
         | None ->
             failwith "Invalid workflow state, no model in state for email rendering."
 
@@ -61,8 +61,8 @@ module Workflow =
             | None ->
                 { SendEmail.CorrelationId = renderComplete.CorrelationId; Content = renderComplete.Content; EmailAddress = "me@example.com" }
         Out.Empty
-        |> Out.AddR request (TimeSpan.FromMinutes 4.0)
-        |> Out.AddC<EmailSent> (request.CorrelationId.ToString()) "EmailSent" (TimeSpan.FromMinutes 5.0) (Some "TimeOut")
+        |> Out.send request (TimeSpan.FromMinutes 4.0)
+        |> Out.expect<EmailSent> (request.CorrelationId.ToString()) "EmailSent" (TimeSpan.FromMinutes 5.0) (Some "TimeOut")
 
     let emailSent (emailSent : EmailSent) (state : IState) =
         printfn "%A" emailSent

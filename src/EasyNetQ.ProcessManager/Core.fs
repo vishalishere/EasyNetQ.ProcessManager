@@ -215,32 +215,34 @@ type Out() =
     /// There is no need to take any further actions as a result of this workflow step.
     static member Empty = Out.Ignore
     /// Add a "request" to the workflow output. This request will be published.
-    static member AddR r expiry (out : Out) =
+    static member send r expiry (out : Out) =
         Out(Mine = { out.Mine with Requests = Request (r, expiry) :> IRequest::out.Mine.Requests })
     /// Add a topic based "request" to be published as a result of this workflow step.
-    static member AddTopicR r expiry topic (out : Out) =
+    static member sendOnTopic r expiry topic (out : Out) =
         Out(Mine = { out.Mine with Requests = TopicRequest (r, expiry, topic) :> IRequest::out.Mine.Requests })
     /// Add a continuation to be expected as a result of this workflow step.
     /// You cannot both add a continuation and cancel a workflow in the same workflow step.
-    static member AddC<'response when 'response : not struct> correlationId handler timeOut timeOutHandler (out : Out) =
+    static member expect<'response when 'response : not struct> correlationId handler timeOut timeOutHandler (out : Out) =
+        if typeof<'response> = typeof<obj> then
+            failwith "You have registered a continuation expecting a System.Object; EasyNetQ.ProcessManager does not allow for this behaviour."
         let c = Continuation<'response>(correlationId, handler, timeOut, timeOutHandler)
         match out.Mine with
         | { Continuations = Cancel } -> failwith "You cannot add continuations to a workflow that is being cancelled."
         | { Continuations = Conts cs } -> Out(Mine = { out.Mine with Continuations = Conts <| (c :> IContinuation)::cs })
     /// Add a "request" to the workflow output. This request will be published.
-    member x.AddRequest<'message when 'message : not struct> (m, expiry) = Out.AddR<'message> m expiry x
+    member x.Send<'message when 'message : not struct> (m, expiry) = Out.send<'message> m expiry x
     /// Add a topic based "request" to be published as a result of this workflow step.
-    member x.AddTopicRequest<'message when 'message : not struct> (m : 'message, expiry, topic) = Out.AddTopicR m expiry topic x
+    member x.Send<'message when 'message : not struct> (m, expiry, topic) = Out.sendOnTopic<'message> m expiry topic x
     /// Add a continuation to be expected as a result of this workflow step.
     /// You cannot both add a continuation and cancel a workflow in the same workflow step.
     /// A TimeOutMessage will be published to be handled by timeOutHandler if the expected
     /// message does not arrive within the timeOut TimeSpan.
-    member x.AddCont<'response when 'response : not struct> (correlationId, handler, timeOut, timeOutHandler) =
-        Out.AddC<'response> correlationId handler timeOut (Some timeOutHandler) x
+    member x.Expect<'response when 'response : not struct> (correlationId, handler, timeOut, timeOutHandler) =
+        Out.expect<'response> correlationId handler timeOut (Some timeOutHandler) x
     /// Add a continuation to be expected as a result of this workflow step.
     /// You cannot both add a continuation and cancel a workflow in the same workflow step.
-    member x.AddCont<'response when 'response : not struct> (correlationId, handler, timeOut) =
-        Out.AddC<'response> correlationId handler timeOut None x
+    member x.Expect<'response when 'response : not struct> (correlationId, handler, timeOut) =
+        Out.expect<'response> correlationId handler timeOut None x
     /// Read only sequence of requests in this instance
     member x.Requests () =
         x.Mine.Requests |> Seq.map (fun r -> r :> IRequestInfo)
