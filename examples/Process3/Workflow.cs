@@ -138,11 +138,15 @@ namespace Process3
 
         public static Out AddressRenderedCheckSendEmail(RenderComplete rc, IState state)
         {
-            var ws = state.AddOrUpdate(new WorkflowState {EmailAddress = rc.Content}, existing =>
+            WorkflowState ws = null;
+            if(!state.TryUpdate(existing =>
             {
                 existing.EmailAddress = rc.Content;
                 return existing;
-            });
+            }, ref ws))
+            {
+                throw new Exception("Missing state after rendering started!");
+            }
             return SendEmailIfReady(ws);
         }
 

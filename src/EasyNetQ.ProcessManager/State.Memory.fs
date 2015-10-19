@@ -4,6 +4,9 @@ open System
 open System.Collections.Concurrent
 open EasyNetQ.ProcessManager
 
+type private MemoryStateMissing() =
+    inherit Exception()
+
 type MemoryState () =
     let store = ConcurrentDictionary<Type, obj>()
     interface IState with
@@ -15,6 +18,14 @@ type MemoryState () =
             match store.TryGetValue typeof<'a> with
             | true, v -> Some (unbox<'a> v)
             | false, _ -> None
+        member x.TryUpdate<'a> (update : Func<'a, 'a>, v : byref<'a>) =
+            let state = x :> IState
+            if store.ContainsKey(typeof<'a>) then
+                let newValue = state.AddOrUpdate<'a> Unchecked.defaultof<'a> update
+                v <- newValue
+                true
+            else
+                false
 
 // In memory state store - designed only to be used for testing.
 type MemoryStateStore () =

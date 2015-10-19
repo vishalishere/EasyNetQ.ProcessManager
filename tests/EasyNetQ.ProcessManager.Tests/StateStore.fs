@@ -11,9 +11,16 @@ type StoreValue =
     | String of NonEmptyString
     | Int of int
 
+type TransformStoreValue =
+    | Strings of (string -> string)
+    | Ints of (int -> int)
+
+type InitialTransformPair =
+    StoreValue * TransformStoreValue
+
 type StoreFunc = IState -> StoreValue -> unit
 type GetAndCheckFunc = IState -> StoreValue -> bool
-type UpdateFunc = IState -> StoreValue -> unit
+type UpdateFunc = IState -> TransformStoreValue -> StoreValue
 
 [<Test>]
 let ``Create memory state store`` () =
@@ -80,9 +87,56 @@ type StateUtilGenerator =
                 | String (NonEmptyString s') ->
                     s.Get<string>().Value = s'
                 | Int i ->
-                    s.Get<int>().Value = i                    
+                    s.Get<int>().Value = i
         ]
         |> List.map Gen.constant
+        |> Gen.oneof
+        |> Arb.fromGen
+    static member UpdateFunc () : Arbitrary<UpdateFunc> =
+        [
+            fun (s : IState) update ->
+                match update with
+                | Strings f ->
+                    let check = Guid.NewGuid().ToString()
+                    let updated = s.AddOrUpdate<string> check (Func<_,_> f)
+                    if updated = check then
+                        failwith "Update of missing value"
+                    else
+                        updated |> NonEmptyString |> String
+                | Ints f ->
+                    let check = Int32.MaxValue
+                    let updated = s.AddOrUpdate<int> check (Func<_,_> f)
+                    if updated = check then
+                        failwith "Update of missing value"
+                    else
+                        Int updated
+            fun (s : IState) update ->
+                match update with
+                | Strings f ->
+                    let mutable str = null
+                    match s.TryUpdate<string> (Func<_,_> f, &str) with
+                    | true -> str |> NonEmptyString |> String
+                    | false -> failwith "Update of missing value"
+                | Ints f ->
+                    let mutable str = 0
+                    match s.TryUpdate<int> (Func<_,_> f, &str) with
+                    | true -> str |> Int
+                    | false -> failwith "Update of missing value"
+        ]
+        |> List.map Gen.constant
+        |> Gen.oneof
+        |> Arb.fromGen
+    static member Updater () : Arbitrary<InitialTransformPair> =
+        [
+            gen {
+                let! v = Arb.generate<StoreValue>
+                let t =
+                    match v with
+                    | Int _ -> Ints (fun i -> i + i) 
+                    | String _ -> Strings (fun s -> s + s)
+                return v, t
+            }
+        ]
         |> Gen.oneof
         |> Arb.fromGen
 
@@ -110,7 +164,9 @@ type Properties =
         sut.Remove wid
         try
             let state = sut.Get wid
-            not <| checkFunc state v
+            let r = not <| checkFunc state v
+            sut.Remove wid
+            r
         with
         | _ -> true
     static member ``Removing a workflow doesn't effect other workflows``
@@ -128,20 +184,17 @@ type Properties =
         sut.Remove wid2
         r
     static member ``Updating a value updates it``
-            (sut : IStateStore) (storeFunc : StoreFunc) (checkFunc : GetAndCheckFunc) ((s1, s2) : NonEmptyString * NonEmptyString) =
+            (sut : IStateStore) (storeFunc : StoreFunc) (updateFunc : UpdateFunc) ((initial, updater) : InitialTransformPair) (checkFunc : GetAndCheckFunc) =
         let wid = WorkflowId (Guid.NewGuid())
-        let v1 = String s1
-        let v2 = String s2
         let state = sut.Create wid
-        storeFunc state v1
-        sut.Add wid state      
+        storeFunc state initial
+        sut.Add wid state
         let state = sut.Get wid
-        state.AddOrUpdate s2.Get (Func<string, string>(fun _ -> s2.Get)) |> ignore
+        let expected = updateFunc state updater
         let state = sut.Get wid
-        let r = checkFunc state v2
+        let r = checkFunc state expected
         sut.Remove wid
         r
-
 
 [<Test>]
 let ``Run properties for memory state`` () =

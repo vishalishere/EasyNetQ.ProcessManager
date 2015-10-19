@@ -2,6 +2,7 @@
 
 open EasyNetQ.ProcessManager
 
+open System
 open System.Data.SqlClient
 
 // SqlServer backed persistent state; requires state table to be deployed.
@@ -41,6 +42,26 @@ type SqlState (connString : string, workflowId : WorkflowId, serializer : ISeria
                 | Some raw ->
                     serializer.Deserialize raw
             safeContext<'a> connString serializer workflowId (Some t) (action value)
+        member x.TryUpdate<'a> (update : Func<'a,'a>, value : byref<'a>) =
+            let t = typeof<'a>
+            let action (update : Func<'a,'a>) conn trans =
+                match getRawState conn trans x.wid t with
+                | None ->
+                    None
+                | Some raw ->
+                    let v =
+                        serializer.Deserialize raw
+                        |> update.Invoke
+                    v
+                    |> serializer.Serialize
+                    |> updateRawState conn trans x.wid t
+                    Some v
+            match safeContext connString serializer workflowId (Some t) (action update) with
+            | Some v ->
+                value <- v
+                true
+            | None ->
+                false
 
 // SqlServer backed persistent state store; requires state table to be deployed.
 type SqlStateStore (connString : string, serializer : ISerializer) =
