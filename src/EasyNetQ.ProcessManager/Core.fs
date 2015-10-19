@@ -28,7 +28,7 @@ type IState =
     /// Get the item of type 'a that is associatied with this
     /// workflow, returning an option type as it might not exist.
     abstract member Get<'a> : unit -> 'a option
-    /// Try and get a state of type 'a from the state store
+    /// Try and update a state of type 'a from the state store
     abstract member TryUpdate<'a> : Func<'a, 'a> * byref<'a> -> bool
 
 /// A store that knows how to store/retrieve the relevant IState for
