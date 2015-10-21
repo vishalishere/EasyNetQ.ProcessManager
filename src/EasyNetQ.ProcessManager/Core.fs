@@ -105,18 +105,19 @@ module private ExpiringPublish =
 /// Default implementation of IPMBus, using EasyNetQ. This will preserve any custom
 /// configuration you have applied to the IBus using EasyNetQ's IoC container, such
 /// as overriding exchange conventions.
-type EasyNetQPMBus (bus : IBus) =
+type EasyNetQPMBus (bus : IBus, subscriptionConfiguration : Action<ISubscriptionConfiguration>) =
     let dms = bus.Advanced.Container.Resolve<IMessageDeliveryModeStrategy>()
     let ped = bus.Advanced.Container.Resolve<Producer.IPublishExchangeDeclareStrategy>()
+    new (bus : IBus) = new EasyNetQPMBus(bus, Action<ISubscriptionConfiguration>(ignore))
     interface IPMBus with
         member __.Publish<'a when 'a : not struct> (message : 'a, expire) =
             publish<'a> bus dms ped message expire None
         member __.Publish<'a when 'a : not struct> (message : 'a, expire, topic) =
             publish<'a> bus dms ped message expire (Some topic)
         member __.Subscribe<'a when 'a : not struct> (subscriptionId, action) =
-            bus.Subscribe<'a>(subscriptionId, action) |> ignore
+            bus.Subscribe<'a>(subscriptionId, action, subscriptionConfiguration) |> ignore
         member __.Subscribe<'a when 'a : not struct> (subscriptionId, topic, action: Action<'a>): unit = 
-            bus.Subscribe<'a>(subscriptionId, action, Action<ISubscriptionConfiguration>(fun x -> x.WithTopic topic |> ignore)) |> ignore
+            bus.Subscribe<'a>(subscriptionId, action, Action<ISubscriptionConfiguration>(fun x -> (subscriptionConfiguration.Invoke x); x.WithTopic topic |> ignore)) |> ignore
     interface IDisposable with
         member __.Dispose() =
             bus.Dispose()
