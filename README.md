@@ -12,10 +12,10 @@ public static Out SendAnEmail(RenderComplete rc, IState state)
 	return
 		Out.Empty
 		   // This message will be sent out via EasyNetQ
-		   .AddRequest(sendEmailMessage, TimeSpan.FromMinutes(5))
+		   .Send(sendEmailMessage, TimeSpan.FromMinutes(5))
 		   // This is a message we expect to recieve in the future,
 		   // and which handler should process it
-		   .AddCont<EmailSent>(
+		   .Expect<EmailSent>(
 				sendEmailMessage.CorrelationId.ToString(),
 				"EmailSentHandler", TimeSpan.FromMinutes(6));
 }

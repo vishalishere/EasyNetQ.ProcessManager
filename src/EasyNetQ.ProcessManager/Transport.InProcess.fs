@@ -84,6 +84,7 @@ let rec private loop subscribers (agent : MailboxProcessor<BusControlMessage>) =
 /// Memory based bus implementation designed for testing
 type InProcessPMBus () =
     let agent = MailboxProcessor.Start(loop [])
+    do agent.Error.Add raise
     interface IPMBus with
         member __.Publish<'a when 'a : not struct> (message : 'a, expire : TimeSpan) =
             agent.Post (Publish (box message, typeof<'a>, DateTime.UtcNow + expire, None))

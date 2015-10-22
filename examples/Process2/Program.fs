@@ -93,10 +93,10 @@ let main argv =
     use bus = RabbitHutch.CreateBus(config.GetResult <@ Rabbit_Connection @>, fun x -> x.Register<IEasyNetQLogger>(fun _ -> Loggers.ConsoleLogger() :> IEasyNetQLogger) |> ignore)
     let activeStore = SqlActiveStore(config.GetResult <@ Sql_Connection @>)
     let stateStore = SqlStateStore(config.GetResult <@ Sql_Connection @>, Serializer())
-    let ipmBus = EasyNetQPMBus(bus)
+    let ipmBus = new EasyNetQPMBus(bus)
 
     // configure subscribers
-    let pm = ProcessManager(ipmBus, "Process", activeStore, stateStore)
+    use pm = new ProcessManager(ipmBus, "Process", activeStore, stateStore)
     Workflow.configure template pm |> ignore
 
     // start workflow

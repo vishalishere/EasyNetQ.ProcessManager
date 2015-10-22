@@ -148,7 +148,7 @@ type Properties =
         let tcs = TaskCompletionSource<bool>()
         bus.Subscribe<string>("TransportTests", fun m -> if m = message then tcs.SetResult true)
         bus.Publish (message, TimeSpan.FromMinutes 5.)
-        !!bus (tcs.Task.Wait 200)
+        !!bus (tcs.Task.Wait 500)
     static member ``Routing by type works`` (busFunc : unit -> IPMBus) message1 message2 order =
         let bus = busFunc()
         let tcs1 = TaskCompletionSource<TestMessage1>()
